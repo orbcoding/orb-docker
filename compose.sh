@@ -123,7 +123,7 @@ declare -A ssh_args=(
 ); function ssh() { # Run command on remote
 	local cmd=( /bin/ssh )
 	_args_to cmd -- -t
-	cmd+=( "${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/orb-cli"\; cd "${_args['-p arg']}/${_args[1]}" '&&' )
+	cmd+=( "${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/.orb-cli/orb-cli"\; cd "${_args['-p arg']}/${_args[1]}" '&&' )
 	${_args['*']} && cmd+=( ${_args_wildcard[*]} ) || cmd+=( /bin/bash )
 	"${cmd[@]}"
 }
