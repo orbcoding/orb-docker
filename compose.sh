@@ -22,6 +22,8 @@ declare -A start_args=(
 
 	orb docker set_current_env $1
 
+	echo "${cmd[@]}"
+
 	"${cmd[@]}"
 }
 

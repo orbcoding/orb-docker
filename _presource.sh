@@ -7,12 +7,10 @@ if [[ -n  "$compose_file" ]]; then
 	# Parse .env
 	if [ -f '.env' ]; then
 		_parse_env .env
-	else
-		echo 'No .env file!'
 	fi
 
 # compose functions require docker-compose.yml
-elif _has_public_function "$_function_name" "$_namespace_dir/compose.sh"; then
+elif [[ -f "$_namespace_dir/compose.sh" ]] && _has_public_function "$_function_name" "$_namespace_dir/compose.sh"; then
 	_raise_error "requires docker-compose.yml"
 fi
 
