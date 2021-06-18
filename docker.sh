@@ -12,22 +12,19 @@ function df() { # Get docker disk usage
 declare -A pruneall_args=(
 	['-f']='force'
 ); function pruneall() { # Prune all stopped and unused including volumes
-	local cmd=( docker system prune --all --volumes )
-	_args_to cmd -x -- -f
+	_args_to docker system prune --all --volumes -- -f
 }
 
 declare -A prunecontainers_args=(
 	['-f']='force'
 ); function prunecontainers() { # Prune all stopped containers, -f = force
-	local cmd=( docker container prune )
-	_args_to cmd -x -- -f
+	_args_to docker container prune -- -f
 }
 
 declare -A pruneimages_args=(
 	['-f']='force'
 ); function pruneimages() { # remove all images, -f = force
-	local cmd=( docker image prune )
-	_args_to cmd -x -- -f
+	_args_to docker image prune -- -f
 }
 
 function stopall() { # stop all containers
