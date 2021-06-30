@@ -22,6 +22,24 @@ declare -A start_args=(
 	"${cmd[@]}"
 }
 
+# start
+declare -A config_args=(
+	['1']='env; DEFAULT: $DEFAULT_ENV|dev; IN: prod|staging|dev'
+	['-i']='start idle'
+	['-d-']='docker-compose options'
+	['-o-']='compose config options'
+); function config() { # Start containers
+
+	local cmd=(
+		$(_args_to orb docker compose_cmd -- -i 1 -d-)
+		$(_args_to -es config -- -o-)
+	)
+
+	orb docker set_current_env $1
+
+	"${cmd[@]}"
+}
+
 # stop
 declare -A stop_args=(
 	['1']='env; DEFAULT: $DEFAULT_ENV|dev; IN: prod|staging|dev'
