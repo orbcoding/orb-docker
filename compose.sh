@@ -197,7 +197,7 @@ declare -A compose_cmd_args=(
 	local cmd=() 
 	_args_to -sa cmd docker-compose -- -o- -d-
 
-	if ! ${_args[-o-]}; then
+	if [[ -z "${_args[-o-]}" ]]; then
 		if [[ -f "docker-compose.$1.yml" ]]; then
 			cmd+=( -f docker-compose.yml -f docker-compose.$1.yml )
 

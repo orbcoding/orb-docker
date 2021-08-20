@@ -2,7 +2,9 @@
 compose_file=$(_upfind_closest docker-compose.yml)
 
 if [[ -n  "$compose_file" ]]; then
-	cd "${compose_file/%\/*}"
+  # https://stackoverflow.com/a/4170409
+	compose_path="${compose_file%\/*}"
+	cd "$compose_path"
 
 	# Parse .env
 	if [ -f '.env' ]; then
@@ -10,7 +12,7 @@ if [[ -n  "$compose_file" ]]; then
 	fi
 
 # compose functions require docker-compose.yml
-elif [[ -f "$_namespace_dir/compose.sh" ]] && _has_public_function "$_function_name" "$_namespace_dir/compose.sh"; then
+elif [[ "${_file_with_function##*\/}" == "compose.sh" ]]; then
 	_raise_error "requires docker-compose.yml"
 fi
 
