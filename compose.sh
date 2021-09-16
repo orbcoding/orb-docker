@@ -51,7 +51,7 @@ declare -A stop_args=(
 # logs
 declare -A logs_args=(
 	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; DEFAULT: web'
+	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
 	['-f']='follow; DEFAULT: true;'
 	['-l arg']="lines; DEFAULT: 300"
 	['-d-']='docker-compose options'
@@ -67,7 +67,7 @@ declare -A logs_args=(
 # clearlogs
 declare -A clearlogs_args=(
 	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; DEFAULT: web'
+	['-s arg']='service; REQUIRED'
 	['-d-']='docker-compose options'
 ); function clearlogs() { # Clear container logs
 	local id=$(_args_to orb docker service_id -- -es -d-)
@@ -105,7 +105,7 @@ declare -A pull_args=(
 # service_id
 declare -A service_id_args=(
 	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; REQUIRED'
+	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
 	['-d-']='docker-compose options'
 	['-o-']='compose ps -q options'
 ); function service_id() {
