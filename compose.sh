@@ -119,7 +119,7 @@ declare -A service_id_args=(
 declare -A bash_args=(
 	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
 	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
-	['-r']='root'
+	['-u arg']='user'
 	['-d']='detached, using run'
 	['-t']='TTY; DEFAULT: true'
 	['-d-']='docker-compose options'
@@ -136,12 +136,9 @@ declare -A bash_args=(
 		)
 	else
 		cmd+=( docker exec -i )
-		_args_to -a cmd -- -t
+		_args_to -a cmd -- -tu
 		cmd+=( "$(_args_to orb docker service_id -- -es -d-)")
 	fi
-
-	# root
-	${_args[-r]} && cmd+=( --user 0 )
 	
 	# bash
 	local bash_cmd=$(${_args['*']} && echo "-c \"${_args_wildcard[@]}\"")

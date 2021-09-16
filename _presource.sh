@@ -6,13 +6,12 @@ if [[ -n  "$compose_file" ]]; then
 	compose_path="${compose_file%\/*}"
 	cd "$compose_path"
 
-	# Parse .env
-	if [ -f '.env' ]; then
-		_parse_env .env
-	fi
-
 # compose functions require docker-compose.yml
 elif [[ "${_file_with_function##*\/}" == "compose.sh" ]]; then
 	_raise_error "requires docker-compose.yml"
 fi
 
+# Parse .env
+if [ -f '.env' ]; then
+	_parse_env .env
+fi
