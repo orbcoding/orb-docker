@@ -122,6 +122,7 @@ declare -A bash_args=(
 	['-u arg']='user'
 	['-d']='detached, using run'
 	['-t']='TTY; DEFAULT: true'
+	['-i']='interactive (disable if job management error); DEFAULT: true'
 	['-d-']='docker-compose options'
 	['*']='cmd; OPTIONAL'
 ); function bash() { # Enter container with bash or exec/run cmd
@@ -140,9 +141,12 @@ declare -A bash_args=(
 		cmd+=( "$(_args_to orb docker service_id -- -es -d-)")
 	fi
 	
+	local bash_flags="-c"
+	[[ "${_args[-i]}" == "true" ]] && bash_flags+="i"
+
 	# bash
-	local bash_cmd=$(${_args['*']} && echo "-c \"${_args_wildcard[@]}\"")
-	cmd+=( /bin/sh -c "[ -f /bin/bash ] && bash $bash_cmd || sh $bash_cmd" )
+	local bash_cmd=$(${_args['*']} && echo "$bash_flags \"${_orb_wildcard[@]}\"")
+	cmd+=( /bin/sh $bash_flags "[ -f /bin/bash ] && bash $bash_cmd || sh $bash_cmd" )
 	_args_to -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
@@ -150,17 +154,24 @@ declare -A bash_args=(
 
 # ssh
 declare -A ssh_args=(
-	['1']='subpath; IN: prod|staging|nginx|adminer; OPTIONAL'
+	['1']='subpath; IN: production|staging|nginx|adminer; OPTIONAL'
 	['-t']='ssh tty; DEFAULT: true'
-	['-p arg']='path; DEFAULT: $SRV_REPO_PATH'
+	['-u arg']='user; DEFAULT: $SRV_USER; REQUIRED'
+	['-d arg']='domain; DEFAULT: $SRV_DOMAIN; REQUIRED'
+	['-p arg']='path; DEFAULT: $SRV_REPO_PATH; REQUIRED'
 	['*']='cmd; OPTIONAL'
 ); function ssh() { # Run command on remote
+	cmd=( /bin/ssh )
+	_args_to -a cmd -- -t
+
 	cmd+=(
-		$(_args_to -e /bin/ssh -- -t)
-		"${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/.orb-cli/orb-cli"\; cd "${_args['-p arg']}/${_args[1]}" '&&' 
-		$(_args_to -e -- '*')
+		"${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/.orb-cli/orb-cli"\; 
+		cd "${_args['-p arg']}/${_args[1]}" '&&' 
 	)
+
+	_args_to -a cmd -- '*'
 	${_args['*']} || cmd+=( /bin/bash )
+
 
 	"${cmd[@]}"
 }
