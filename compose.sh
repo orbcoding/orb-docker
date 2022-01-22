@@ -9,13 +9,13 @@ declare -A start_args=(
 	['-d-']='docker-compose options'
 	['-o-']='compose up options'
 ); function start() { # Start containers
-	${_args[-r]} && _args_to orb docker stop -- -es
+	${_args[-r]} && orb_pass orb docker stop -- -es
 
-	local cmd=($(_args_to orb docker compose_cmd -- -ei -d-))
-	_args_to -sa cmd up -- -d -o-
+	local cmd=($(orb_pass orb docker compose_cmd -- -ei -d-))
+	orb_pass -sa cmd up -- -d -o-
 	[[ -n ${_args['-s arg']} ]] && cmd+=(--no-deps ${_args['-s arg']})
 
-	_args_to -x orb docker set_current_env -- -e
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
@@ -27,10 +27,10 @@ declare -A config_args=(
 	['-d-']='docker-compose options'
 	['-o-']='compose config options'
 ); function config() { # Start containers
-	local cmd=($(_args_to orb docker compose_cmd -- -ei -d-))
-	_args_to -sa cmd config -- -o- 
+	local cmd=($(orb_pass orb docker compose_cmd -- -ei -d-))
+	orb_pass -sa cmd config -- -o- 
 
-	_args_to -x orb docker set_current_env -- -e
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
@@ -42,8 +42,8 @@ declare -A stop_args=(
 	['-d-']='docker-compose options'
 	['-o-']='compose stop options'
 ); function stop() { # Stop containers
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd stop -- -s -o-
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -sa cmd stop -- -s -o-
 
 	"${cmd[@]}"
 }
@@ -57,8 +57,8 @@ declare -A logs_args=(
 	['-d-']='docker-compose options'
 	['-o-']='docker logs options'
 ); function logs() { # Get container log
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd logs -- -f -o-
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -sa cmd logs -- -f -o-
 	cmd+=(--tail "${_args[-l arg]}" ${_args[-s arg]})
 
 	"${cmd[@]}"
@@ -70,7 +70,7 @@ declare -A clearlogs_args=(
 	['-s arg']='service; REQUIRED'
 	['-d-']='docker-compose options'
 ); function clearlogs() { # Clear container logs
-	local id=$(_args_to orb docker service_id -- -es -d-)
+	local id=$(orb_pass orb docker service_id -- -es -d-)
 	sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' "$id")
 }
 
@@ -82,8 +82,8 @@ declare -A rm_args=(
 	['-o-']='compose rm options'
 	['--force']='force; DEFAULT: true'
 ); function rm() { # Rm containers
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-  _args_to -sa cmd rm -- --force -o- -s
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+  orb_pass -sa cmd rm -- --force -o- -s
 
 	"${cmd[@]}"
 }
@@ -94,10 +94,10 @@ declare -A pull_args=(
 	['-d-']='docker-compose options'
 	['-o-']='compose pull options'
 ); function pull() { # Pull compose project images
-	_args_to -x orb docker set_current_env -- -e
+	orb_pass -x orb docker set_current_env -- -e
 	
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd pull -- -o-
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -sa cmd pull -- -o-
 
 	"${cmd[@]}"
 }
@@ -109,8 +109,8 @@ declare -A service_id_args=(
 	['-d-']='docker-compose options'
 	['-o-']='compose ps -q options'
 ); function service_id() {
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd ps -q -- -o- -s
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -sa cmd ps -q -- -o- -s
 
 	"${cmd[@]}"
 }
@@ -130,15 +130,15 @@ declare -A bash_args=(
 	local cmd=()
 
 	if ${_args[-d]}; then
-		_args_to -x orb docker set_current_env -- -e
+		orb_pass -x orb docker set_current_env -- -e
 		cmd+=( 
-			$(_args_to orb docker compose_cmd -- -e -d-) 
+			$(orb_pass orb docker compose_cmd -- -e -d-) 
 			run --no-deps --rm ${_args['-s arg']}
 		)
 	else
 		cmd+=( docker exec -i )
-		_args_to -a cmd -- -tu
-		cmd+=( "$(_args_to orb docker service_id -- -es -d-)")
+		orb_pass -a cmd -- -tu
+		cmd+=( "$(orb_pass orb docker service_id -- -es -d-)")
 	fi
 	
 	local bash_flags="-c"
@@ -147,7 +147,7 @@ declare -A bash_args=(
 	# bash
 	local bash_cmd=$(${_args['*']} && echo "$bash_flags \"${_orb_wildcard[@]}\"")
 	cmd+=( /bin/sh $bash_flags "[ -f /bin/bash ] && bash $bash_cmd || sh $bash_cmd" )
-	_args_to -x orb docker set_current_env -- -e
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
@@ -162,14 +162,14 @@ declare -A ssh_args=(
 	['*']='cmd; OPTIONAL'
 ); function ssh() { # Run command on remote
 	cmd=( /bin/ssh )
-	_args_to -a cmd -- -t
+	orb_pass -a cmd -- -t
 
 	cmd+=(
 		"${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/.orb-cli/orb-cli"\; 
 		cd "${_args['-p arg']}/${_args[1]}" '&&' 
 	)
 
-	_args_to -a cmd -- '*'
+	orb_pass -a cmd -- '*'
 	${_args['*']} || cmd+=( /bin/bash )
 
 
@@ -206,7 +206,7 @@ declare -A compose_cmd_args=(
 	['-d-']='compose options addition'
 ); function compose_cmd() { # Init compose_cmd with correct compose files
 	local cmd=() 
-	_args_to -sa cmd docker-compose -- -o- -d-
+	orb_pass -sa cmd docker-compose -- -o- -d-
 
 	if [[ -z "${_args[-o-]}" ]]; then
 		if [[ -f "docker-compose.${_args[-e arg]}.yml" ]]; then
