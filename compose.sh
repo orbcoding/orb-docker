@@ -145,7 +145,7 @@ declare -A bash_args=(
 	[[ "${_args[-i]}" == "true" ]] && bash_flags+="i"
 
 	# bash
-	local bash_cmd=$(${_args['*']} && echo "$bash_flags \"${_orb_wildcard[@]}\"")
+	local bash_cmd=$(${_args['*']} && echo "$bash_flags \"${_args_wildcard[@]}\"")
 	cmd+=( /bin/sh $bash_flags "[ -f /bin/bash ] && bash $bash_cmd || sh $bash_cmd" )
 	_args_to -x orb docker set_current_env -- -e
 
