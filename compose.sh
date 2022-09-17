@@ -172,7 +172,6 @@ declare -A ssh_args=(
 	_args_to -a cmd -- '*'
 	${_args['*']} || cmd+=( /bin/bash )
 
-
 	"${cmd[@]}"
 }
 

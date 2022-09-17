@@ -36,14 +36,20 @@ function stopall() { # stop all containers
 function rebuild() { # Rebuild image $BUILD_IMAGE from _docker (.env)
 	local path
 	[ -d _docker ] && path=_docker || path=.
-	docker build --rm --build-arg PARENT_IMAGE="$PARENT_IMAGE" "$path" -t "$BUILD_IMAGE"
+	docker build --rm --build-arg BUILD_PARENT_IMAGE="$BUILD_PARENT_IMAGE" --build-arg BUILD_ENV="$BUILD_ENV" "$path" -t "$(build_image_name)"
 }
 
 function runimage() { # Run built image
-	docker run -it --rm "$BUILD_IMAGE" bash -c "${_args[*]}"
+	docker run -it --rm $(build_image_name) bash -c "${_args[*]}"
 }
 
 function push() { # Push rebuilt image $BUILD_IMAGE to docker hub
 	docker login
-	docker push $BUILD_IMAGE
+	docker push "$(build_image_name)"
+}
+
+build_image_name() {
+	local name="$BUILD_IMAGE"
+	[[ -n $BUILD_ENV ]] && name+="_$BUILD_ENV"
+	echo "$name"
 }
