@@ -1,176 +1,253 @@
 # Containers
 # start
-declare -A start_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='start single service'
-	['-i']='start idle'
-	['-r']='stop first'
-	['-d']='daemon; DEFAULT: true'
-	['-d-']='docker-compose options'
-	['-o-']='compose up options'
-); function start() { # Start containers
-	${_args[-r]} && _args_to orb docker stop -- -es
+start_orb=(
+	"Start containers"
 
-	local cmd=($(_args_to orb docker compose_cmd -- -ei -d-))
-	_args_to -sa cmd up -- -d -o-
-	[[ -n ${_args['-s arg']} ]] && cmd+=(--no-deps ${_args['-s arg']})
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service "start single service"
+	-i = idle
+	-r = restart "stop first"
+	-d = daemon
+		Default: true
+	-d- = compose_opts "docker-compose opts"
+	-o- = up_opts "docker-compose up options"
+);
+function start() {
+	$restart && orb_pass orb docker stop -- -es
 
-	_args_to -x orb docker set_current_env -- -e
+	local cmd=($(orb_pass orb docker compose_cmd -- -ei -d-))
+	orb_pass -va cmd up -- -d -o-
+	[[ -n $service ]] && cmd+=(--no-deps $service)
+
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
 
 # start
-declare -A config_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'
-	['-i']='start idle'
-	['-d-']='docker-compose options'
-	['-o-']='compose config options'
-); function config() { # Start containers
-	local cmd=($(_args_to orb docker compose_cmd -- -ei -d-))
-	_args_to -sa cmd config -- -o- 
+config_orb=(
+	"Container config"
 
-	_args_to -x orb docker set_current_env -- -e
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-i = idle
+	-d- = compose_opts "docker-compose opts"
+	-o- = up_opts "docker-compose up options"
+);
+function config() {
+	local cmd=($(orb_pass orb docker compose_cmd -- -ei -d-))
+	orb_pass -va cmd config -- -o-
+
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
 
 # stop
-declare -A stop_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='stop single service'
-	['-d-']='docker-compose options'
-	['-o-']='compose stop options'
-); function stop() { # Stop containers
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd stop -- -s -o-
+stop_orb=(
+	"Stop containers"
+	
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service "start single service"
+	-d- = compose_opts "docker-compose opts"
+	-o- = up_opts "docker-compose up options"
+);
+function stop() {
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -va cmd stop -- -s -o-
+	orb_pass -x orb docker set_current_env -- -e
+
 
 	"${cmd[@]}"
 }
 
 # logs
-declare -A logs_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
-	['-f']='follow; DEFAULT: true;'
-	['-l arg']="lines; DEFAULT: 300"
-	['-d-']='docker-compose options'
-	['-o-']='docker logs options'
-); function logs() { # Get container log
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd logs -- -f -o-
-	cmd+=(--tail "${_args[-l arg]}" ${_args[-s arg]})
+logs_orb=(
+	"Get container log"
+
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service
+		Default: IfPresent: '$ORB_DEFAULT_SERVICE'
+		Required: true
+	-f = follow
+		Default: true
+	-l 1 = lines
+		Default: 300
+	-d- = compose_opts "docker-compose opts"
+	-o- = up_opts "docker-compose up options"
+);
+function logs() {
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -va cmd logs -- -f -o-
+	cmd+=(--tail "$lines" $service)
 
 	"${cmd[@]}"
 }
 
 # clearlogs
-declare -A clearlogs_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; REQUIRED'
-	['-d-']='docker-compose options'
-); function clearlogs() { # Clear container logs
-	local id=$(_args_to orb docker service_id -- -es -d-)
+clearlogs_orb=(
+	"Clear container logs"
+
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service
+		Required: true
+	-d- = compose_opts "docker-compose opts"
+);
+function clearlogs() { #
+	local id=$(orb_pass orb docker service_id -- -es -d-)
 	sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' "$id")
 }
 
 # rm
-declare -A rm_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='rm single service'
-	['-d-']='docker-compose options'
-	['-o-']='compose rm options'
-	['--force']='force; DEFAULT: true'
-); function rm() { # Rm containers
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-  _args_to -sa cmd rm -- --force -o- -s
+rm_orb=(
+	"Rm containers"
+
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service 'rm single service'
+	-d- = compose_opts 'docker-compose options'
+	-o- = rm_opts 'compose rm options'
+	--force = force
+		Default: true
+);
+function rm() {
+	orb_pass -x orb docker set_current_env -- -e
+
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+  orb_pass -va cmd rm -- --force -o- -s
 
 	"${cmd[@]}"
 }
 
 # pull
-declare -A pull_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-d-']='docker-compose options'
-	['-o-']='compose pull options'
-); function pull() { # Pull compose project images
-	_args_to -x orb docker set_current_env -- -e
-	
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd pull -- -o-
+pull_orb=(
+	"Pull compose project images"
+
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-d- = compose_opts 'docker-compose options'
+	-o- = pull_opts 'compose pull options'
+); 
+function pull() {
+	orb_pass -x orb docker set_current_env -- -e
+
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -va cmd pull -- -o-
 
 	"${cmd[@]}"
 }
 
 # service_id
-declare -A service_id_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
-	['-d-']='docker-compose options'
-	['-o-']='compose ps -q options'
-); function service_id() {
-	local cmd=($(_args_to orb docker compose_cmd -- -e -d-))
-	_args_to -sa cmd ps -q -- -o- -s
+service_id_orb=(
+	"Get service id"
+
+		-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service 'service to id'
+		Default: IfPresent: '$ORB_DEFAULT_SERVICE'
+		Required: true
+	-d- = compose_opts 'docker-compose options'
+	-o- = ps_opts 'compose ps -q options'
+); 
+function service_id() {
+	orb_pass -x orb docker set_current_env -- -e
+	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
+	orb_pass -va cmd ps -q -- -o- -s
 
 	"${cmd[@]}"
 }
 
 # bash
-declare -A bash_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'	
-	['-s arg']='service; DEFAULT: $DEFAULT_SERVICE; REQUIRED'
-	['-u arg']='user'
-	['-d']='detached, using run'
-	['-t']='TTY; DEFAULT: true'
-	['-i']='interactive (disable if job management error); DEFAULT: true'
-	['-d-']='docker-compose options'
-	['*']='cmd; OPTIONAL'
-); function bash() { # Enter container with bash or exec/run cmd
+bash_orb=(
+	"Enter container with bash or exec/run cmd"
+
+	-e 1 = env
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+	-s 1 = service 'service to id'
+		Default: "$ORB_DEFAULT_SERVICE"
+		Required: true
+	-u 1 = user
+	-d = detached "detached, using run"
+	-t = tty
+		Default: true
+	-i = interactive "interactive, disable if job management error"
+		Default: true
+	-d- = compose_opts "docker-compose options"
+	... = input_cmd
+		Required: false
+); 
+function bash() {
 	# detached
 	local cmd=()
 
-	if ${_args[-d]}; then
-		_args_to -x orb docker set_current_env -- -e
-		cmd+=( 
-			$(_args_to orb docker compose_cmd -- -e -d-) 
-			run --no-deps --rm ${_args['-s arg']}
+	if $detached; then
+		orb_pass -x orb docker set_current_env -- -e
+		cmd+=(
+			$(orb_pass orb docker compose_cmd -- -e -d-)
+			run --no-deps --rm $service
 		)
 	else
 		cmd+=( docker exec -i )
-		_args_to -a cmd -- -tu
-		cmd+=( "$(_args_to orb docker service_id -- -es -d-)")
+		orb_pass -a cmd -- -tu
+		cmd+=( "$(orb_pass orb docker service_id -- -es -d-)")
 	fi
-	
+
 	local bash_flags="-c"
-	[[ "${_args[-i]}" == "true" ]] && bash_flags+="i"
+	$interactive && bash_flags+="i"
 
 	# bash
-	local bash_cmd=$(${_args['*']} && echo "$bash_flags \"${_args_wildcard[@]}\"")
+	local bash_cmd=$([[ -n ${input_cmd[@]} ]] && echo "$bash_flags \"${input_cmd[@]}\"")
 	cmd+=( /bin/sh $bash_flags "[ -f /bin/bash ] && bash $bash_cmd || sh $bash_cmd" )
-	_args_to -x orb docker set_current_env -- -e
-
+	orb_pass -x orb docker set_current_env -- -e
+	
 	"${cmd[@]}"
 }
 
 # ssh
-declare -A ssh_args=(
-	['1']='subpath; IN: production|staging|nginx|adminer; OPTIONAL'
-	['-t']='ssh tty; DEFAULT: true'
-	['-u arg']='user; DEFAULT: $SRV_USER; REQUIRED'
-	['-d arg']='domain; DEFAULT: $SRV_DOMAIN; REQUIRED'
-	['-p arg']='path; DEFAULT: $SRV_REPO_PATH; REQUIRED'
-	['*']='cmd; OPTIONAL'
-); function ssh() { # Run command on remote
+ssh_orb=(
+	"Run command on remote"
+
+	1 = subpath
+		In: production staging nginx adminer
+		Required: false
+	-t = tty
+		Default: true
+	-u 1 = user
+		Default: IfPresent: '$ORB_SRV_USER'
+		Required: true
+	-d 1 = domain
+		Default: IfPresent: '$ORB_SRV_DOMAIN'	
+		Required: true
+	-p 1 = path
+		Default: IfPresent: '$ORB_SRV_REPO_PATH'
+		Required: true
+	... = input_cmd
+		Required: false
+); 
+function ssh() {
 	cmd=( /bin/ssh )
-	_args_to -a cmd -- -t
+	orb_pass -a cmd -- -t
 
 	cmd+=(
-		"${SRV_USER}@${SRV_DOMAIN}" PATH="\$PATH:~/.orb-cli/orb-cli"\; 
-		cd "${_args['-p arg']}/${_args[1]}" '&&' 
+		"${ORB_SRV_USER}@${ORB_SRV_DOMAIN}" PATH="\$PATH:~/.orb/orb"\;
+		cd "$path/$subpath" '&&'
 	)
 
-	_args_to -a cmd -- '*'
-	${_args['*']} || cmd+=( /bin/bash )
+	orb_pass -a cmd -- ...
+	[[ -n "${input_cmd[@]}" ]] || cmd+=( /bin/bash )
 
 	"${cmd[@]}"
 }
@@ -178,40 +255,54 @@ declare -A ssh_args=(
 ###########
 # Remote
 ###########
-function mountremote() { # Mount remote to _remote
+mountremote_orb=(
+	"Mount remote to _remote"
+)
+function mountremote() {
 	if [ -d _remote ]; then
-		sshfs -o follow_symlinks ${SRV_USER}@${SRV_DOMAIN}:${SRV_REPO_PATH} _remote
+		sshfs -o follow_symlinks ${ORB_SRV_USER}@${ORB_SRV_DOMAIN}:${ORB_SRV_REPO_PATH} _remote
 	else
 		echo 'No _remote'
 	fi
 }
 
-function umountremote() { # Umount _remote
+umountremote_orb=(
+	"Umount _remote"
+)
+function umountremote() {
 	umount -l _remote
 }
 
-function updateremotecli() { # Update remote orb-cli
-	orb docker ssh -p ".orb-cli" "orb git pullall"
+updateremotecli_orb=(
+	"Update remote orb"
+)
+function updateremotecli() {
+	orb docker ssh -p ".orb" "orb git pullall"
 }
 
 ##########
 # HELPERS
 ##########
 # compose_cmd
-declare -A compose_cmd_args=(
-	['-e arg']='env; IN: production|staging|development'
-	['-i']='start idle'
-	['-o-']='compose options override; DEFAULT: $COMPOSE_OPTIONS_OVERRIDE'
-	['-d-']='compose options addition'
-); function compose_cmd() { # Init compose_cmd with correct compose files
-	local cmd=() 
-	_args_to -sa cmd docker-compose -- -o- -d-
+compose_cmd_orb=(
+	"Init compose_cmd with correct compose files"
 
-	if [[ -z "${_args[-o-]}" ]]; then
-		if [[ -f "docker-compose.${_args[-e arg]}.yml" ]]; then
-			cmd+=( -f docker-compose.yml -f docker-compose.${_args[-e arg]}.yml )
+	-e 1 = env
+		In: production staging development
+		Required: true
+	-i = idle
+	-o- = compose_opts_override
+		Default: IfPresent: '$COMPOSE_OPTIONS_OVERRIDE'
+	-d- = compose_opts_add
+); function compose_cmd() {
+	local cmd=()
+	orb_pass -va cmd docker-compose -- -o- -d-
 
-			if ${_args[-i]}; then # idle
+	if [[ -z "${compose_opts_override[@]}" ]]; then
+		if [[ -f "docker-compose.$env.yml" ]]; then
+			cmd+=( -f docker-compose.yml -f docker-compose.$env.yml )
+
+			if $idle; then
 				[[ -f "docker-compose.idle.yml" ]] && \
 				cmd+=( -f docker-compose.idle.yml )
 			fi
@@ -222,11 +313,15 @@ declare -A compose_cmd_args=(
 }
 
 # set_current_env
-declare -A set_current_env_args=(
-	['-e arg']='env; DEFAULT: $DEFAULT_ENV|development; IN: production|staging|development'
-); function set_current_env() { # export current env vars
-	export CURRENT_ENV="${_args[-e arg]}"
-	export CURRENT_ID=$(id -u)
-	export CURRENT_GID=$(id -g)
+set_current_env_orb=(
+	"export current env vars"
+
+	-e 1 = env 
+		Default: IfPresent: '$ORB_DEFAULT_ENV || development'
+		In: production staging development
+); function set_current_env() { # 
+	export ORB_CURRENT_ENV="$env"
+	export ORB_CURRENT_ID=$(id -u)
+	export ORB_CURRENT_GID=$(id -g)
 }
 

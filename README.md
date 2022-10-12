@@ -1,2 +1,2 @@
-# orb-cli-namespace-docker
-orb-cli docker namespace
+# orb-namespace-docker
+orb docker namespace
