@@ -87,6 +87,7 @@ function logs() {
 	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
 	orb_pass -va cmd logs -- -f -o-
 	cmd+=(--tail "$lines" $service)
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
@@ -125,6 +126,7 @@ function rm() {
 
 	local cmd=($(orb_pass orb docker compose_cmd -- -e -d-))
   orb_pass -va cmd rm -- --force -o- -s
+	orb_pass -x orb docker set_current_env -- -e
 
 	"${cmd[@]}"
 }
@@ -223,23 +225,20 @@ ssh_orb=(
 	1 = subpath
 		In: production staging nginx adminer
 		Required: false
-	-t = tty
-		Default: true
-	-u 1 = user
-		Default: IfPresent: '$ORB_SRV_USER'
+	-t = tty Default: true
+	-u 1 = user Default: IfPresent: '$ORB_SRV_USER'
 		Required: true
-	-d 1 = domain
-		Default: IfPresent: '$ORB_SRV_DOMAIN'	
+	-d 1 = domain Default: IfPresent: '$ORB_SRV_DOMAIN'	
 		Required: true
-	-p 1 = path
-		Default: IfPresent: '$ORB_SRV_REPO_PATH'
+	-P 1 = path Default: IfPresent: '$ORB_SRV_REPO_PATH'
 		Required: true
+	-p 1 = port Default: IfPresent: '$ORB_SRV_PORT'
 	... = input_cmd
 		Required: false
 ); 
 function ssh() {
 	cmd=( /bin/ssh )
-	orb_pass -a cmd -- -t
+	orb_pass -a cmd -- -tp
 
 	cmd+=(
 		"${ORB_SRV_USER}@${ORB_SRV_DOMAIN}" PATH="\$PATH:~/.orb/orb"\;
